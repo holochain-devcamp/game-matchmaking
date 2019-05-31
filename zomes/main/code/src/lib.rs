@@ -18,13 +18,13 @@ use hdk::holochain_core_types::{
     entry::Entry,
     dna::entry_types::Sharing,
     error::HolochainError,
-    json::JsonString,
+    json::{JsonString, RawString},
     validation::EntryValidationData,
     cas::content::AddressableContent,
 };
 
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson,Clone)]
+#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
 struct GameProposal {
     agent: Address,
     message: String,
@@ -43,22 +43,23 @@ pub fn game_proposal_def() -> ValidatingEntryType {
             // In this case it is just the entry data itself
             hdk::ValidationPackageDefinition::Entry
         },
-        validation: | validation_data: hdk::EntryValidationData<GameProposal>| {
-            match validation_data {
-                // only match if the entry is being created (not modified or deleted)
-                EntryValidationData::Create{ entry, validation_data } => {
-                    let game_proposal = GameProposal::from(entry);
-                    if validation_data.sources().contains(&game_proposal.agent) {
-                        Ok(())
-                    } else {
-                        Err("Cannot author a proposal from another agent".into())
-                    }
+        validation: | _validation_data: hdk::EntryValidationData<GameProposal>| {
+            Ok(())
+            // match validation_data {
+            //     // only match if the entry is being created (not modified or deleted)
+            //     EntryValidationData::Create{ entry, validation_data } => {
+            //         let game_proposal = GameProposal::from(entry);
+            //         if validation_data.sources().contains(&game_proposal.agent) {
+            //             Ok(())
+            //         } else {
+            //             Err("Cannot author a proposal from another agent".into())
+            //         }
                     
-                },
-                _ => {
-                    Err("Cannot modify or delete".into())
-                }
-            }
+            //     },
+            //     _ => {
+            //         Err("Cannot modify or delete".into())
+            //     }
+            // }
         }
     )
 }
@@ -71,15 +72,15 @@ pub fn anchor_def() -> ValidatingEntryType {
         validation_package: || {
             hdk::ValidationPackageDefinition::Entry
         },
-        validation: | _validation_data: hdk::EntryValidationData<GameProposal>| {
+        validation: | _validation_data: hdk::EntryValidationData<String>| {
             Ok(())
         },
         links: [
             to!(
                 "game_proposal", // this must match exactly the target entry type
-                link_type: "has_proposal", // must use this when creating the link
+                tag: "has_proposal", // must use this when creating the link
                 validation_package: || {
-                    hdk::ValidationPackageDefinition::ChainFull
+                    hdk::ValidationPackageDefinition::Entry
                 },
                 validation: | _validation_data: hdk::LinkValidationData| {
                     Ok(())
@@ -92,7 +93,7 @@ pub fn anchor_def() -> ValidatingEntryType {
 fn handle_create_proposal(message: String) -> ZomeApiResult<Address> {
 
     // create the data as a struct
-    let game_proposal_data = GameProposal{ 
+    let game_proposal_data = GameProposal { 
         agent: AGENT_ADDRESS.to_string().into(),
         message,
     };
@@ -119,7 +120,6 @@ fn handle_create_proposal(message: String) -> ZomeApiResult<Address> {
         &anchor_address,
         &proposal_address,
         "has_proposal", // the link type, defined on the base entry
-        "", // the link tag, not required in this example
     )?;
     
     // return the proposal address
@@ -135,15 +135,15 @@ fn handle_get_proposals() -> ZomeApiResult<Vec<GameProposal>> {
     
     hdk::utils::get_links_and_load_type(
         &anchor_address, 
-        Some("has_proposal".into()), // the link type to match
-        None, // the link tag to match. None means return all tags
+        "has_proposal", // the link type to match
     )
 }
 
 
 define_zome! {
     entries: [
-       game_proposal_def()
+       game_proposal_def(),
+       anchor_def()
     ]
 
     genesis: || { Ok(()) }
@@ -162,6 +162,6 @@ define_zome! {
     ]
 
     traits: {
-        hc_public [create_my_entry,get_my_entry]
+        hc_public [create_proposal, get_proposals]
     }
 }
