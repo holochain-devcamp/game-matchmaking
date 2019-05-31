@@ -34,3 +34,29 @@ scenario.runTape("Bob can see the proposal created by Alice", async (t, { alice,
   console.log(proposals)
   t.deepEqual(proposals.Ok.length, 1)
 })
+
+// It is possible to write scenarios with multiple agents!
+scenario.runTape("Bob can accept Alices proposal and Alice can see the game", async (t, { alice, bob }) => {
+  const addr = await alice.callSync("main", "create_proposal", {"message" : "sup"})
+  console.log(addr)
+  t.equal(addr.Ok.length, 46)
+
+  const proposals = await bob.callSync("main", "get_proposals", {})
+  console.log(proposals)
+  t.equal(proposals.Ok.length, 1)
+
+  const acceptance = await bob.callSync("main", "accept_proposal", { proposal: proposals.Ok[0], created_at: 0 })
+  console.log(acceptance)
+  t.notEqual(acceptance.Ok, undefined) // check it returned Ok
+
+  const games = await bob.callSync("main", "check_responses", { proposal_addr: addr.Ok })
+  console.log(games)
+  t.deepEqual(
+  	games.Ok, 
+  	[{
+  		player_1: bob.agentId,
+  		player_2: alice.agentId,
+  		created_at: 0,
+  	}]
+  )
+})

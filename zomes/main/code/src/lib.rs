@@ -30,6 +30,12 @@ struct GameProposal {
     message: String,
 }
 
+#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
+pub struct Game {
+    pub player_1: Address,
+    pub player_2: Address,
+    pub created_at: u32,
+}
 
 pub fn game_proposal_def() -> ValidatingEntryType {
     entry!(
@@ -59,6 +65,28 @@ pub fn game_proposal_def() -> ValidatingEntryType {
                     Err("Cannot modify or delete".into())
                 }
             }
+        },
+        links: [
+            to!(
+                "game",
+                tag: "from_proposal",
+                validation_package: || { hdk::ValidationPackageDefinition::Entry },
+                validation: | _validation_data: hdk::LinkValidationData| {
+                    Ok(())
+                }
+            )
+        ]
+    )
+}
+
+pub fn game_def() -> ValidatingEntryType {
+    entry!(
+        name: "game",
+        description: "Represents current or past game",
+        sharing: Sharing::Public, 
+        validation_package: || { hdk::ValidationPackageDefinition::Entry },
+        validation: | _validation_data: hdk::EntryValidationData<Game>| {
+            Ok(())
         }
     )
 }
@@ -68,9 +96,7 @@ pub fn anchor_def() -> ValidatingEntryType {
         name: "anchor",
         description: "Central known location to link from",
         sharing: Sharing::Public, 
-        validation_package: || {
-            hdk::ValidationPackageDefinition::Entry
-        },
+        validation_package: || { hdk::ValidationPackageDefinition::Entry },
         validation: | _validation_data: hdk::EntryValidationData<String>| {
             Ok(())
         },
@@ -138,10 +164,44 @@ fn handle_get_proposals() -> ZomeApiResult<Vec<GameProposal>> {
     )
 }
 
+fn handle_accept_proposal(proposal: GameProposal, created_at: u32) -> ZomeApiResult<()> {
+    // check the proposal exists
+    let proposal_addr = Entry::App(
+        "game_proposal".into(),
+        proposal.clone().into()
+    ).address();
+    // this will early return error if it doesn't exist
+    hdk::get_entry(&proposal_addr)?;
+
+    // create the new game
+    let game = Game {
+        player_1: AGENT_ADDRESS.to_string().into(),
+        player_2: proposal.agent,
+        created_at,
+    };
+    let game_entry = Entry::App(
+        "game".into(),
+        game.into()
+    );
+    let game_addr = hdk::commit_entry(&game_entry)?;
+
+    // link to the proposal
+    hdk::link_entries(
+        &proposal_addr,
+        &game_addr,
+        "from_proposal"
+    )?;
+    Ok(())
+}
+
+fn handle_check_responses(proposal_addr: Address) -> ZomeApiResult<Vec<Game>> {
+    hdk::utils::get_links_and_load_type(&proposal_addr, "from_proposal")
+}
 
 define_zome! {
     entries: [
        game_proposal_def(),
+       game_def(),
        anchor_def()
     ]
 
@@ -158,9 +218,19 @@ define_zome! {
             outputs: |result: ZomeApiResult<Vec<GameProposal>>|,
             handler: handle_get_proposals
         }
+        accept_proposal: {
+            inputs: |proposal: GameProposal, created_at: u32|,
+            outputs: |result: ZomeApiResult<()>|,
+            handler: handle_accept_proposal
+        }
+        check_responses: {
+            inputs: |proposal_addr: Address|,
+            outputs: |result: ZomeApiResult<Vec<Game>>|,
+            handler: handle_check_responses
+        }
     ]
 
     traits: {
-        hc_public [create_proposal, get_proposals]
+        hc_public [create_proposal, get_proposals, accept_proposal, check_responses]
     }
 }
