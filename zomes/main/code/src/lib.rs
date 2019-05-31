@@ -61,8 +61,11 @@ pub fn game_proposal_def() -> ValidatingEntryType {
                     }
                     
                 },
+                EntryValidationData::Delete{..} => {
+                    Ok(())
+                },
                 _ => {
-                    Err("Cannot modify or delete".into())
+                    Err("Cannot modify, only create and delete".into())
                 }
             }
         },
@@ -198,6 +201,10 @@ fn handle_check_responses(proposal_addr: Address) -> ZomeApiResult<Vec<Game>> {
     hdk::utils::get_links_and_load_type(&proposal_addr, "from_proposal")
 }
 
+fn handle_remove_proposal(proposal_addr: Address) -> ZomeApiResult<Address> {
+    hdk::remove_entry(&proposal_addr)
+}
+
 define_zome! {
     entries: [
        game_proposal_def(),
@@ -228,9 +235,14 @@ define_zome! {
             outputs: |result: ZomeApiResult<Vec<Game>>|,
             handler: handle_check_responses
         }
+        remove_proposal: {
+            inputs: |proposal_addr: Address|,
+            outputs: |result: ZomeApiResult<Address>|,
+            handler: handle_remove_proposal
+        }
     ]
 
     traits: {
-        hc_public [create_proposal, get_proposals, accept_proposal, check_responses]
+        hc_public [create_proposal, get_proposals, accept_proposal, check_responses, remove_proposal]
     }
 }
