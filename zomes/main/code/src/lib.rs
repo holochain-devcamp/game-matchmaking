@@ -18,7 +18,7 @@ use hdk::holochain_core_types::{
     entry::Entry,
     dna::entry_types::Sharing,
     error::HolochainError,
-    json::{JsonString, RawString},
+    json::{JsonString},
     validation::EntryValidationData,
     cas::content::AddressableContent,
 };
@@ -43,23 +43,22 @@ pub fn game_proposal_def() -> ValidatingEntryType {
             // In this case it is just the entry data itself
             hdk::ValidationPackageDefinition::Entry
         },
-        validation: | _validation_data: hdk::EntryValidationData<GameProposal>| {
-            Ok(())
-            // match validation_data {
-            //     // only match if the entry is being created (not modified or deleted)
-            //     EntryValidationData::Create{ entry, validation_data } => {
-            //         let game_proposal = GameProposal::from(entry);
-            //         if validation_data.sources().contains(&game_proposal.agent) {
-            //             Ok(())
-            //         } else {
-            //             Err("Cannot author a proposal from another agent".into())
-            //         }
+        validation: | validation_data: hdk::EntryValidationData<GameProposal>| {
+            match validation_data {
+                // only match if the entry is being created (not modified or deleted)
+                EntryValidationData::Create{ entry, validation_data } => {
+                    let game_proposal = GameProposal::from(entry);
+                    if validation_data.sources().contains(&game_proposal.agent) {
+                        Ok(())
+                    } else {
+                        Err("Cannot author a proposal from another agent".into())
+                    }
                     
-            //     },
-            //     _ => {
-            //         Err("Cannot modify or delete".into())
-            //     }
-            // }
+                },
+                _ => {
+                    Err("Cannot modify or delete".into())
+                }
+            }
         }
     )
 }
