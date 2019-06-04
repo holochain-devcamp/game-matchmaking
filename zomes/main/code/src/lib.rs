@@ -32,13 +32,6 @@ struct GameProposal {
     message: String,
 }
 
-#[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-pub struct Game {
-    pub player_1: Address,
-    pub player_2: Address,
-    pub created_at: u32,
-}
-
 #[zome]
 pub mod main {
 
@@ -90,19 +83,6 @@ pub mod main {
                     }
                 )
             ]
-        )
-    }
-
-    #[entry_def]
-    pub fn game_def() -> ValidatingEntryType {
-        entry!(
-            name: "game",
-            description: "Represents current or past game",
-            sharing: Sharing::Public, 
-            validation_package: || { hdk::ValidationPackageDefinition::Entry },
-            validation: | _validation_data: hdk::EntryValidationData<Game>| {
-                Ok(())
-            }
         )
     }
 
