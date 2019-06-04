@@ -220,9 +220,4 @@ pub mod main {
     fn check_responses(proposal_addr: Address) -> ZomeApiResult<Vec<Game>> {
         hdk::utils::get_links_and_load_type(&proposal_addr, Some("from_proposal".into()), None)
     }
-
-    #[zome_fn("hc_public")]
-    fn remove_proposal(proposal_addr: Address) -> ZomeApiResult<Address> {
-        hdk::remove_entry(&proposal_addr)
-    }
 }
