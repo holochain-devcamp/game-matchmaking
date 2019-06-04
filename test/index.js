@@ -61,20 +61,20 @@ scenario.runTape("Bob can accept Alices proposal, create a game and Alice can se
   )
 })
 
-scenario.runTape("Alice can create a proposal and delete it. It will not be retrieved by get_proposals", async (t, { alice }) => {
-  const addr = await alice.callSync("main", "create_proposal", {message : "delete me"})
-  console.log(addr)
-  t.deepEqual(addr.Ok.length, 46)
+// scenario.runTape("Alice can create a proposal and delete it. It will not be retrieved by get_proposals", async (t, { alice }) => {
+//   const addr = await alice.callSync("main", "create_proposal", {message : "delete me"})
+//   console.log(addr)
+//   t.deepEqual(addr.Ok.length, 46)
 
-  const proposals = await alice.callSync("main", "get_proposals", {})
-  console.log(proposals)
-  t.deepEqual(proposals.Ok.length, 1)
+//   const proposals = await alice.callSync("main", "get_proposals", {})
+//   console.log(proposals)
+//   t.deepEqual(proposals.Ok.length, 1)
 
-  const delete_addr = await alice.callSync("main", "remove_proposal", { proposal_addr: addr.Ok })
-  console.log(delete_addr)
-  t.deepEqual(delete_addr.Ok, addr.Ok)
+//   const delete_addr = await alice.callSync("main", "remove_proposal", { proposal_addr: addr.Ok })
+//   console.log(delete_addr)
+//   t.deepEqual(delete_addr.Ok, addr.Ok)
 
-  const proposals2 = await alice.callSync("main", "get_proposals", {})
-  console.log(proposals2)
-  t.deepEqual(proposals2.Ok.length, 0) // the old proposal has been marked as deleted to it won't return
-})
+//   const proposals2 = await alice.callSync("main", "get_proposals", {})
+//   console.log(proposals2)
+//   t.deepEqual(proposals2.Ok.length, 0) // the old proposal has been marked as deleted to it won't return
+// })
