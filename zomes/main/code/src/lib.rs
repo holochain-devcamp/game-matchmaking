@@ -72,17 +72,7 @@ pub mod main {
                         Err("Cannot modify, only create and delete".into())
                     }
                 }
-            },
-            links: [
-                to!(
-                    "game",
-                    link_type: "from_proposal",
-                    validation_package: || { hdk::ValidationPackageDefinition::Entry },
-                    validation: | _validation_data: hdk::LinkValidationData| {
-                        Ok(())
-                    }
-                )
-            ]
+            }
         )
     }
 
