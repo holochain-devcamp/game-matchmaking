@@ -54,26 +54,30 @@ pub mod main {
                 hdk::ValidationPackageDefinition::Entry
             },
             validation: | validation_data: hdk::EntryValidationData<GameProposal>| {
-                match validation_data {
-                    // only match if the entry is being created (not modified or deleted)
-                    EntryValidationData::Create{ entry, validation_data } => {
-                        let game_proposal = GameProposal::from(entry);
-                        if validation_data.sources().contains(&game_proposal.agent) {
-                            Ok(())
-                        } else {
-                            Err("Cannot author a proposal from another agent".into())
-                        }
-                        
-                    },
-                    EntryValidationData::Delete{..} => {
-                        Ok(())
-                    },
-                    _ => {
-                        Err("Cannot modify, only create and delete".into())
-                    }
-                }
+                validate_game_proposal(validation_data)
             }
         )
+    }
+
+    fn validate_game_proposal(validation_data: hdk::EntryValidationData<GameProposal>) -> Result<(), String> {
+        match validation_data {
+            // only match if the entry is being created (not modified or deleted)
+            EntryValidationData::Create{ entry, validation_data } => {
+                let game_proposal = GameProposal::from(entry);
+                if validation_data.sources().contains(&game_proposal.agent) {
+                    Ok(())
+                } else {
+                    Err("Cannot author a proposal from another agent".into())
+                }
+                
+            },
+            EntryValidationData::Delete{..} => {
+                Ok(())
+            },
+            _ => {
+                Err("Cannot modify, only create and delete".into())
+            }
+        }
     }
 
     #[entry_def]
@@ -153,4 +157,34 @@ pub mod main {
             None,
         )
     }
+}
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+    use hdk::{EntryValidationData, ValidationData};
+
+    #[test]
+    fn test_validate_proposal_can_create() {
+        let test_agent_address = Address::from("test-address");
+        let proposal = GameProposal { 
+            agent: test_agent_address,
+            message: "test message".into(),
+        };
+
+        let validation_data = EntryValidationData::Create{
+            entry: proposal,
+            validation_data: ValidationData {
+                
+                ..ValidationData::default()
+            },
+        };
+
+        let result = validate_game_proposal(validation_data);
+        assert_eq!(
+            result,
+            Ok(())
+        )
+    }
+
 }
