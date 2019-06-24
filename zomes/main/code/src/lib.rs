@@ -55,30 +55,26 @@ pub mod main {
                 hdk::ValidationPackageDefinition::Entry
             },
             validation: | validation_data: hdk::EntryValidationData<GameProposal>| {
-                validate_game_proposal(validation_data)
+                match validation_data {
+                    // only match if the entry is being created (not modified or deleted)
+                    EntryValidationData::Create{ entry, validation_data } => {
+                        let game_proposal = GameProposal::from(entry);
+                        if validation_data.sources().contains(&game_proposal.agent) {
+                            Ok(())
+                        } else {
+                            Err("Cannot author a proposal from another agent".into())
+                        }
+                        
+                    },
+                    EntryValidationData::Delete{..} => {
+                        Ok(())
+                    },
+                    _ => {
+                        Err("Cannot modify, only create and delete".into())
+                    }
+                }
             }
         )
-    }
-
-    fn validate_game_proposal(validation_data: hdk::EntryValidationData<GameProposal>) -> Result<(), String> {
-        match validation_data {
-            // only match if the entry is being created (not modified or deleted)
-            EntryValidationData::Create{ entry, validation_data } => {
-                let game_proposal = GameProposal::from(entry);
-                if validation_data.sources().contains(&game_proposal.agent) {
-                    Ok(())
-                } else {
-                    Err("Cannot author a proposal from another agent".into())
-                }
-                
-            },
-            EntryValidationData::Delete{..} => {
-                Ok(())
-            },
-            _ => {
-                Err("Cannot modify, only create and delete".into())
-            }
-        }
     }
 
     #[entry_def]
