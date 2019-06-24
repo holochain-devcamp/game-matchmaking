@@ -188,4 +188,37 @@ pub mod main {
             LinkMatch::Any,
         )
     }
+
+    #[zome_fn("hc_public")]
+    pub fn accept_proposal(proposal_addr: Address, created_at: u32) -> ZomeApiResult<Address> {
+        // this will early return error if it doesn't exist
+        let proposal: GameProposal = hdk::utils::get_as_type(proposal_addr.clone())?;
+
+        // create the new game
+        let game = Game {
+            player_1: AGENT_ADDRESS.to_string().into(),
+            player_2: proposal.agent,
+            created_at,
+        };
+        let game_entry = Entry::App(
+            "game".into(),
+            game.into()
+        );
+        let game_addr = hdk::commit_entry(&game_entry)?;
+
+        // link to the proposal
+        hdk::link_entries(
+            &proposal_addr,
+            &game_addr,
+            "from_proposal",
+            ""
+        )?;
+        Ok(game_addr)
+    }
+
+    #[zome_fn("hc_public")]
+    pub fn check_responses(proposal_addr: Address) -> ZomeApiResult<Vec<Game>> {
+        hdk::utils::get_links_and_load_type(&proposal_addr, LinkMatch::Exactly("from_proposal".into()), LinkMatch::Any)
+    }
+
 }
