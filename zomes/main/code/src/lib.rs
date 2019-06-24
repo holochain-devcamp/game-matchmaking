@@ -23,6 +23,7 @@ use hdk::holochain_core_types::{
     json::{JsonString},
     validation::EntryValidationData,
     cas::content::AddressableContent,
+    link::LinkMatch,
 };
 
 
@@ -153,38 +154,8 @@ pub mod main {
         
         hdk::utils::get_links_and_load_type(
             &anchor_address, 
-            Some("has_proposal".into()), // the link type to match,
-            None,
+            LinkMatch::Exactly("has_proposal"), // the link type to match,
+            LinkMatch::Any,
         )
     }
-}
-
-#[cfg(test)]
-pub mod tests {
-    use super::*;
-    use hdk::{EntryValidationData, ValidationData};
-
-    #[test]
-    fn test_validate_proposal_can_create() {
-        let test_agent_address = Address::from("test-address");
-        let proposal = GameProposal { 
-            agent: test_agent_address,
-            message: "test message".into(),
-        };
-
-        let validation_data = EntryValidationData::Create{
-            entry: proposal,
-            validation_data: ValidationData {
-                
-                ..ValidationData::default()
-            },
-        };
-
-        let result = validate_game_proposal(validation_data);
-        assert_eq!(
-            result,
-            Ok(())
-        )
-    }
-
 }
