@@ -221,4 +221,9 @@ pub mod main {
         hdk::utils::get_links_and_load_type(&proposal_addr, LinkMatch::Exactly("from_proposal".into()), LinkMatch::Any)
     }
 
+    #[zome_fn("hc_public")]
+    pub fn remove_proposal(proposal_addr: Address) -> ZomeApiResult<Address> {
+        hdk::remove_entry(&proposal_addr)
+    }
+
 }
