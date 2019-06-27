@@ -5,25 +5,27 @@ extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-#[macro_use]
-extern crate holochain_core_types_derive;
 extern crate hdk_proc_macros;
+#[macro_use]
+extern crate holochain_json_derive;
 use hdk_proc_macros::zome;
 
 use hdk::{
     AGENT_ADDRESS,
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
-};
-use hdk::holochain_core_types::{
-    cas::content::Address,
-    entry::Entry,
-    dna::entry_types::Sharing,
-    error::HolochainError,
-    json::{JsonString},
-    validation::EntryValidationData,
-    cas::content::AddressableContent,
-    link::LinkMatch,
+    holochain_json_api::{
+        error::JsonError, json::JsonString,
+    },
+    holochain_persistence_api::{
+        cas::content::{AddressableContent, Address},
+    },
+    holochain_core_types::{
+        entry::Entry,
+        dna::entry_types::Sharing,
+        validation::EntryValidationData,
+        link::LinkMatch,
+    },
 };
 
 
