@@ -101,7 +101,7 @@ pub mod main {
             links: [
                 from!(
                     "game_proposal",
-                    link_type: "game_from_proposal",
+                    link_type: "from_proposal",
                     validation_package: || {
                         hdk::ValidationPackageDefinition::Entry
                     },
