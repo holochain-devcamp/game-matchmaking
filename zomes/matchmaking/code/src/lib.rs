@@ -1,63 +1,73 @@
-#![feature(try_from, proc_macro_hygiene)]
+#![feature(proc_macro_hygiene)]
 #[macro_use]
 extern crate hdk;
+extern crate hdk_proc_macros;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
 extern crate serde_json;
-extern crate hdk_proc_macros;
 #[macro_use]
 extern crate holochain_json_derive;
-use hdk_proc_macros::zome;
 
 use hdk::{
-    AGENT_ADDRESS,
     entry_definition::ValidatingEntryType,
     error::ZomeApiResult,
-    holochain_json_api::{
-        error::JsonError, json::JsonString,
-    },
-    holochain_persistence_api::{
-        cas::content::{AddressableContent, Address},
-    },
-    holochain_core_types::{
-        entry::Entry,
-        dna::entry_types::Sharing,
-        validation::EntryValidationData,
-        link::LinkMatch,
-    },
+    AGENT_ADDRESS,
+};
+use hdk::holochain_core_types::{
+    entry::Entry,
+    dna::entry_types::Sharing,
+    validation::EntryValidationData,
+    link::LinkMatch,
 };
 
+use hdk::holochain_json_api::{
+    json::JsonString,
+    error::JsonError
+};
+
+use hdk::holochain_persistence_api::{
+    cas::content::Address
+};
+
+use hdk_proc_macros::zome;
+
+// see https://developer.holochain.org/api/0.0.18-alpha1/hdk/ for info on using the hdk library
+
+// This is a sample zome that defines an entry type "MyEntry" that can be committed to the
+// agent's chain via the exposed function create_my_entry
 
 #[derive(Serialize, Deserialize, Debug, DefaultJson, Clone)]
-struct GameProposal {
-    agent: Address,
-    message: String,
+pub struct GameProposal {
+    pub agent: Address,
+    pub message: String,
+    pub timestamp: u32,
 }
 
 #[zome]
-pub mod main {
+mod my_zome {
 
-    #[genesis]
-    pub fn genesis() {
+    #[init]
+    pub fn init() {
+        Ok(())
+    }
+
+    #[validate_agent]
+    pub fn validate_agent(validation_data: EntryValidationData<AgentId>) {
         Ok(())
     }
 
     #[entry_def]
-    pub fn game_proposal_def() -> ValidatingEntryType {
+     fn game_proposal_def() -> ValidatingEntryType {
         entry!(
-            // we will need to use this name when creating an entry later
             name: "game_proposal",
             description: "Represents an agent advertizing they wish to play a game at this time",
-            // Public sharing means this entry goes to the local chain *and* DHT
-            sharing: Sharing::Public, 
+            sharing: Sharing::Public,
             validation_package: || {
-                // This defines the data required for the validation callback.
-                // In this case it is just the entry data itself
                 hdk::ValidationPackageDefinition::Entry
             },
-            validation: | validation_data: hdk::EntryValidationData<GameProposal>| {
-                match validation_data {
+            validation: | _validation_data: hdk::EntryValidationData<GameProposal>| {
+                match _validation_data {
                     // only match if the entry is being created (not modified or deleted)
                     EntryValidationData::Create{ entry, validation_data } => {
                         let game_proposal = GameProposal::from(entry);
@@ -66,13 +76,9 @@ pub mod main {
                         } else {
                             Err("Cannot author a proposal from another agent".into())
                         }
-                        
-                    },
-                    EntryValidationData::Delete{..} => {
-                        Ok(())
                     },
                     _ => {
-                        Err("Cannot modify, only create and delete".into())
+                        Err("Cannot modify or delete, only create".into())
                     }
                 }
             }
@@ -80,7 +86,7 @@ pub mod main {
     }
 
     #[entry_def]
-    pub fn anchor_def() -> ValidatingEntryType {
+    fn anchor_def() -> ValidatingEntryType {
         entry!(
             name: "anchor",
             description: "Central known location to link from",
@@ -105,12 +111,12 @@ pub mod main {
     }
 
     #[zome_fn("hc_public")]
-    fn create_proposal(message: String) -> ZomeApiResult<Address> {
-
+    pub fn create_proposal(message: String, timestamp: u32) -> ZomeApiResult<Address> {
         // create the data as a struct
         let game_proposal_data = GameProposal { 
             agent: AGENT_ADDRESS.to_string().into(),
             message,
+            timestamp
         };
         
         // create an entry
@@ -135,7 +141,7 @@ pub mod main {
             &anchor_address,
             &proposal_address,
             "has_proposal", // the link type, defined on the base entry
-            "",
+            "" // the tag which is not used in this example
         )?;
         
         // return the proposal address
@@ -145,10 +151,12 @@ pub mod main {
     #[zome_fn("hc_public")]
     fn get_proposals() -> ZomeApiResult<Vec<GameProposal>> {
         // define the anchor entry again and compute its hash
-        let anchor_address = Entry::App(
+        let anchor_entry = Entry::App(
             "anchor".into(),
             "game_proposals".into()
-        ).address();
+        );
+
+        let anchor_address = hdk::entry_address(&anchor_entry)?;
         
         hdk::utils::get_links_and_load_type(
             &anchor_address, 
@@ -156,4 +164,5 @@ pub mod main {
             LinkMatch::Any,
         )
     }
+
 }

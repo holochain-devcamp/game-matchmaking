@@ -1,0 +1,71 @@
+{
+	"info": {
+		"_postman_id": "f28fff2d-ef32-4fef-9680-0c7c3b41b915",
+		"name": "matchmaking create_proposal and get_proposals",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "create_proposal",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 0,\n    \"method\": \"call\",\n    \"params\": {\n        \"instance_id\": \"test-instance\",\n        \"zome\": \"matchmaking\",\n        \"function\": \"create_proposal\",\n        \"args\": {\n        \t\"message\": \"cool\",\n        \t\"timestamp\": 56947509\n        }\n    }\n}"
+				},
+				"url": {
+					"raw": "localhost:8888?Content-Type=application/json",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"query": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get_proposals",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"jsonrpc\": \"2.0\",\n    \"id\": 0,\n    \"method\": \"call\",\n    \"params\": {\n        \"instance_id\": \"test-instance\",\n        \"zome\": \"matchmaking\",\n        \"function\": \"get_proposals\",\n        \"args\": {}\n    }\n}"
+				},
+				"url": {
+					"raw": "localhost:8888?Content-Type=application/json",
+					"host": [
+						"localhost"
+					],
+					"port": "8888",
+					"query": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
